@@ -7,15 +7,12 @@ import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
-import { createPost } from "../controllers/post.controller.js";
+
 // Load environment variables from .env file
 dotenv.config(); // Ensure .env is loaded at the top
 
 // Server setup
 const app = express();
-
-// Middleware for parsing JSON body
-app.use(express.json()); // This ensures the body is parsed as JSON
 
 // CORS middleware
 app.use(cors({
@@ -41,9 +38,6 @@ app.use("/posts", postRouter);
 app.use("/comments", commentRouter);
 app.use("/webhook", webhookRouter); // Make sure this route is properly set up
 
-// Add the route for creating posts (for example, a POST request to /posts)
-app.post("/posts", createPost);  // This will call the createPost controller when posting to /posts
-
 // Error handling middleware
 app.use((error, req, res, next) => {
   res.status(error.status || 500);
@@ -55,7 +49,7 @@ app.use((error, req, res, next) => {
 });
 
 // Ensure DATABASE_URL is properly loaded from .env
-const mongoURI = "mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog";
+const mongoURI =  "mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog" ;
 if (!mongoURI) {
   console.error("DATABASE_URL is missing in .env");
   process.exit(1); // Exit if no DB URL is available
