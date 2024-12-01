@@ -1,9 +1,14 @@
-import { requireAuth } from "@clerk/express";
+
+
+
+
+
+import { withAuth } from "@clerk/express";
 
 export const authMiddleware = (req, res, next) => {
-  requireAuth()(req, res, (err) => {
+  withAuth(req, res, (err) => {
     if (err) {
-      return res.status(401).json({ message: "Not authenticated", error: err.message });
+      return res.status(401).json({ message: "Authentication failed", error: err.message });
     }
     next();
   });

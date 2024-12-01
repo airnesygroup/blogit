@@ -7,14 +7,17 @@ import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
-import { authMiddleware } from "../middlewares/auth.js";
+import { ClerkExpressWithAuth } from "@clerk/express";
+
+
 // Load environment variables from .env file
 dotenv.config(); // Ensure .env is loaded at the top
 
 // Server setup
 const app = express();
-app.use(authMiddleware); // Apply globally
-
+ClerkExpressWithAuth({
+  apiKey: process.env.CLERK_SECRET_KEY, // Use the Secret Key here
+});
 // CORS middleware
 app.use(cors({
   origin: function(origin, callback) {
