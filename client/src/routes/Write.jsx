@@ -53,24 +53,22 @@ const Write = () => {
   if (isLoaded && !isSignedIn) {
     return <div className="">You should login!</div>;
   }
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-
+  
     const data = {
       img: cover.filePath || "",
-      title: formData.get("title"),
+      title: formData.get("title"), // This should match the name of the title field
       category: formData.get("category"),
       desc: formData.get("desc"),
       content: value,
     };
-
-    console.log(data);
-
+  
+    console.log(data); // Ensure this data is populated correctly
     mutation.mutate(data);
   };
-
+  
   return (
     <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col gap-6">
       <h1 className="text-cl font-light">Create a New Post</h1>
