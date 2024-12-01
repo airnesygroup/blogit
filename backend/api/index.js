@@ -7,17 +7,17 @@ import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
-import { ClerkExpressWithAuth } from "@clerk/express";
-
+import { withAuth } from "@clerk/express"; // Correct import for Clerk
 
 // Load environment variables from .env file
 dotenv.config(); // Ensure .env is loaded at the top
 
 // Server setup
 const app = express();
-ClerkExpressWithAuth({
-  apiKey: process.env.CLERK_SECRET_KEY, // Use the Secret Key here
-});
+
+// Use Clerk authentication middleware
+app.use(withAuth()); // Apply Clerk middleware globally for authentication
+
 // CORS middleware
 app.use(cors({
   origin: function(origin, callback) {
@@ -53,7 +53,7 @@ app.use((error, req, res, next) => {
 });
 
 // Ensure DATABASE_URL is properly loaded from .env
-const mongoURI =  "mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog" ;
+const mongoURI = "mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog";
 if (!mongoURI) {
   console.error("DATABASE_URL is missing in .env");
   process.exit(1); // Exit if no DB URL is available
