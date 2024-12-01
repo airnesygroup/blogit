@@ -16,8 +16,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 const queryClient = new QueryClient();
 
-// Hardcoded Clerk publishable key
-const PUBLISHABLE_KEY = "pk_test_cmVmaW5lZC1kcnVtLTk4LmNsZXJrLmFjY291bnRzLmRldiQ";
+// Access the Clerk publishable key from environment variables
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 const router = createBrowserRouter([
   {
