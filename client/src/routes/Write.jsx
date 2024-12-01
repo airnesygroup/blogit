@@ -31,34 +31,21 @@ const Write = () => {
 
   const { getToken } = useAuth();
 
-    const mutation = useMutation({
-      mutationFn: async (newPost) => {
-        const token = await getToken(); // Make sure this is returning a valid token
-        if (!token) {
-          throw new Error("No token found. Please log in.");
-        }
-    
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/posts`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Ensure the token is passed correctly
-          },
-          body: JSON.stringify(newPost),
-        });
-    
-        if (!response.ok) {
-          throw new Error("Failed to create post: " + response.statusText);
-        }
-    
-        return response.json();
-      },
-      onSuccess: (res) => {
-        toast.success("Post has been created");
-        navigate(`/${res.slug}`);
-      },
-    });
-    
+  const mutation = useMutation({
+    mutationFn: async (newPost) => {
+      const token = await getToken();
+      return axios.post(`${import.meta.env.VITE_API_URL}/posts`, newPost, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success("Post has been created");
+      navigate(`/${res.data.slug}`);
+    },
+  });
+
   if (!isLoaded) {
     return <div className="">Loading...</div>;
   }
