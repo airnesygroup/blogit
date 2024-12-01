@@ -95,7 +95,7 @@ export const createPost = async (req, res) => {
   console.log(req.headers);
 
   if (!clerkUserId) {
-    return res.status(401).json("Not authenticated!");
+    return res.status(401).json("Not authentic]ated!");
   }
 
   const user = await User.findOne({ clerkUserId });
