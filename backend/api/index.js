@@ -7,8 +7,7 @@ import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
-import { createPost } from "./controllers/post.controller.js";  // Import createPost controller
-
+import { createPost } from "../controllers/post.controller.js";
 // Load environment variables from .env file
 dotenv.config(); // Ensure .env is loaded at the top
 
