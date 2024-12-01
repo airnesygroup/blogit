@@ -93,17 +93,17 @@ export const getPost = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    const clerkUserId = req.auth?.userId; // Check if auth is defined
+    const clerkUserId = req.auth?.userId;
     if (!clerkUserId) {
       return res.status(401).json("Not authenticated!");
     }
-
+    
     const user = await User.findOne({ clerkUserId });
     if (!user) {
       return res.status(404).json("User not found!");
     }
 
-    // Proceed with the post creation logic
+    // Proceed with post creation
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
     let existingPost = await Post.findOne({ slug });
     let counter = 2;
