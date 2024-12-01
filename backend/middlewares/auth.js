@@ -1,10 +1,9 @@
-import { withAuth } from "@clerk/clerk-sdk-node";
+import { requireAuth } from "@clerk/express";
 
-// Middleware to attach auth data to the request
 export const authMiddleware = (req, res, next) => {
-  withAuth(req, res, (err) => {
+  requireAuth()(req, res, (err) => {
     if (err) {
-      return res.status(401).json({ message: "Authentication error", error: err.message });
+      return res.status(401).json({ message: "Not authenticated", error: err.message });
     }
     next();
   });
