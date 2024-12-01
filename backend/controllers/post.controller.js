@@ -92,7 +92,11 @@ export const getPost = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    // Proceed with post creation directly without authentication check
+    if (!req.body.title) {
+      return res.status(400).json("Title is required!");
+    }
+
+    // Proceed with post creation
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
     let existingPost = await Post.findOne({ slug });
     let counter = 2;
