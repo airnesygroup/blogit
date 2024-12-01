@@ -8,17 +8,11 @@ import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 
-// Import Clerk middleware
-import { withAuth } from '@clerk/clerk-sdk-node';  // Use this for authentication
-
 // Load environment variables from .env file
 dotenv.config(); // Ensure .env is loaded at the top
 
 // Server setup
 const app = express();
-
-// Use Clerk middleware to attach the authenticated user to `req.auth`
-app.use(withAuth());  // Add Clerk's authentication middleware
 
 // CORS middleware
 app.use(cors({
