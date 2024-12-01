@@ -90,16 +90,12 @@ export const getPost = async (req, res) => {
 };
 export const createPost = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId;
-
-    console.log(req.headers);
-
+    const clerkUserId = req.auth.userId; // Clerk's user ID
     if (!clerkUserId) {
       return res.status(401).json("Not authenticated!");
     }
-
+    
     const user = await User.findOne({ clerkUserId });
-
     if (!user) {
       return res.status(404).json("User not found!");
     }
@@ -107,7 +103,6 @@ export const createPost = async (req, res) => {
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
     let existingPost = await Post.findOne({ slug });
     let counter = 2;
-
     while (existingPost) {
       slug = `${slug}-${counter}`;
       existingPost = await Post.findOne({ slug });
