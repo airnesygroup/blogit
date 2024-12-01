@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.0.69",
     "@prisma/client": "^5.22.0",
     "@vercel/node": "^3.2.27",
     "cors": "^2.8.5",
