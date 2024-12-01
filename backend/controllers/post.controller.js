@@ -88,18 +88,22 @@ export const getPost = async (req, res) => {
   );
   res.status(200).json(post);
 };
+
+
+
 export const createPost = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId; // Clerk's user ID
+    const clerkUserId = req.auth?.userId; // Check if auth is defined
     if (!clerkUserId) {
       return res.status(401).json("Not authenticated!");
     }
-    
+
     const user = await User.findOne({ clerkUserId });
     if (!user) {
       return res.status(404).json("User not found!");
     }
 
+    // Proceed with the post creation logic
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
     let existingPost = await Post.findOne({ slug });
     let counter = 2;
@@ -117,6 +121,7 @@ export const createPost = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
 
 
 export const deletePost = async (req, res) => {
