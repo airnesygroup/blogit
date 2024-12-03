@@ -98,9 +98,10 @@ export const getPost = async (req, res) => {
 
 
 export const createPost = async (req, res) => {
-  const clerkUserId = req.auth.userId;
+  console.log("Headers:", req.headers);
+console.log("Auth Object:", req.auth);
 
-  console.log(req.headers);
+  const clerkUserId = req.auth.userId; // Populated by Clerk middleware
 
   if (!clerkUserId) {
     return res.status(401).json("Not authenticated!");
@@ -129,6 +130,7 @@ export const createPost = async (req, res) => {
   const post = await newPost.save();
   res.status(200).json(post);
 };
+
 
 
 
