@@ -1,15 +1,10 @@
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
+// Add publicRoutes if needed
+export default clerkMiddleware({
+  publicRoutes: ["/"]  
+});
 
-
-
-
-import { withAuth } from "@clerk/express";
-
-export const authMiddleware = (req, res, next) => {
-  withAuth(req, res, (err) => {
-    if (err) {
-      return res.status(401).json({ message: "Authentication failed", error: err.message });
-    }
-    next();
-  });
+export const config = {
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };

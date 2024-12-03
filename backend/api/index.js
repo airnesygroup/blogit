@@ -17,12 +17,10 @@ const app = express();
 
 // Initialize Clerk client
 const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-  publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY 
+  secretKey: process.env.CLERK_SECRET_KEY
 })
 
-app.use(clerkMiddleware({ clerkClient }))
-
+app.
 
 
 
