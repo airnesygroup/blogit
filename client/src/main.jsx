@@ -19,7 +19,7 @@ dotenv.config(); // Ensure .env is loaded at the top
 const queryClient = new QueryClient();
 
 // Hardcoded Clerk publishable key
-const PUBLISHABLE_KEY = "pk_test_dW5pcXVlLWdlY2tvLTE3LmNsZXJrLmFjY291bnRzLmRldiQ";
+const PUBLISHABLE_KEY = pk_test_dW5pcXVlLWdlY2tvLTE3LmNsZXJrLmFjY291bnRzLmRldiQ;
 
 const router = createBrowserRouter([
   {
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider publishableKey={ PUBLISHABLE_KEY}>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <ToastContainer position="bottom-right" />
