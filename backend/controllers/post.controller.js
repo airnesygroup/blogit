@@ -1,211 +1,155 @@
-import ImageKit from "imagekit";
-import Post from "../models/post.model.js";
-import User from "../models/user.model.js";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { useMutation } from "@tanstack/react-query";
+import ReactQuill from "react-quill-new";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import Upload from "../components/Upload";
+import "react-quill-new/dist/quill.snow.css";
 
-// Hardcoded credentials for ImageKit
-const imagekit = new ImageKit({
-  urlEndpoint: "https://ik.imagekit.io/blogifiy",  // Replace with your actual URL Endpoint
-  publicKey: "public_F6gpylB1rbMQM244+yeFKTj9xzI=",  // Replace with your actual Public Key
-  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM= "  // Replace with your actual Private Key
-});
+const Write = () => {
+  const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const navigate = useNavigate();
 
-export const getPosts = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 2;
+  const [value, setValue] = useState(""); // Editor content
+  const [cover, setCover] = useState(""); // Cover image data
+  const [progress, setProgress] = useState(0); // Upload progress
 
-  const query = {};
+  // Mutation for posting data
+  const mutation = useMutation({
+    mutationFn: async (newPost) => {
+      const token = await getToken(); // Get the user's token
+      console.log("Frontend Token:", token);
 
-  console.log(req.query);
-
-  const cat = req.query.cat;
-  const author = req.query.author;
-  const searchQuery = req.query.search;
-  const sortQuery = req.query.sort;
-  const featured = req.query.featured;
-
-  if (cat) {
-    query.category = cat;
-  }
-
-  if (searchQuery) {
-    query.title = { $regex: searchQuery, $options: "i" };
-  }
-
-  if (author) {
-    const user = await User.findOne({ username: author }).select("_id");
-
-    if (!user) {
-      return res.status(404).json("No post found!");
-    }
-
-    query.user = user._id;
-  }
-
-  let sortObj = { createdAt: -1 };
-
-  if (sortQuery) {
-    switch (sortQuery) {
-      case "newest":
-        sortObj = { createdAt: -1 };
-        break;
-      case "oldest":
-        sortObj = { createdAt: 1 };
-        break;
-      case "popular":
-        sortObj = { visit: -1 };
-        break;
-      case "trending":
-        sortObj = { visit: -1 };
-        query.createdAt = {
-          $gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
-        };
-        break;
-      default:
-        break;
-    }
-  }
-
-  if (featured) {
-    query.isFeatured = true;
-  }
-
-  const posts = await Post.find(query)
-    .populate("user", "username")
-    .sort(sortObj)
-    .limit(limit)
-    .skip((page - 1) * limit);
-
-  const totalPosts = await Post.countDocuments();
-  const hasMore = page * limit < totalPosts;
-
-  res.status(200).json({ posts, hasMore });
-};
-
-export const getPost = async (req, res) => {
-  const post = await Post.findOne({ slug: req.params.slug }).populate(
-    "user",
-    "username img"
-  );
-  res.status(200).json(post);
-};
-
-
-
-
-
-
-
-
-const Post = require("../models/post.model.js"; // Mongoose model for Post
-const User = require("..//models/user.model.js"; // Mongoose model for User
-
-exports.createPost = async (req, res) => {
-  try {
-    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract token
-    console.log("Token received at backend:", receivedToken);
-
-    const clerkUserId = req.auth?.userId; // Clerk middleware should populate this
-    console.log("Extracted Clerk userId:", clerkUserId);
-
-    if (!clerkUserId) {
-      return res.status(401).json({ error: "Not authenticated!" });
-    }
-
-    const user = await User.findOne({ clerkUserId });
-    if (!user) {
-      return res.status(404).json({ error: "User not found!" });
-    }
-
-    // Generate slug for the post
-    let slug = req.body.title.toLowerCase().replace(/\s+/g, "-");
-    let existingPost = await Post.findOne({ slug });
-
-    // Handle duplicate slug
-    let counter = 2;
-    while (existingPost) {
-      slug = `${slug}-${counter}`;
-      existingPost = await Post.findOne({ slug });
-      counter++;
-    }
-
-    const newPost = new Post({
-      user: user._id,
-      slug,
-      ...req.body,
-    });
-
-    const post = await newPost.save();
-    return res.status(201).json(post);
-  } catch (error) {
-    console.error("Error in createPost:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-
-
-export const deletePost = async (req, res) => {
-  const clerkUserId = req.auth.userId;
-
-  if (!clerkUserId) {
-    return res.status(401).json("Not authenticated!");
-  }
-
-  const role = req.auth.sessionClaims?.metadata?.role || "user";
-
-  if (role === "admin") {
-    await Post.findByIdAndDelete(req.params.id);
-    return res.status(200).json("Post has been deleted");
-  }
-
-  const user = await User.findOne({ clerkUserId });
-
-  const deletedPost = await Post.findOneAndDelete({
-    _id: req.params.id,
-    user: user._id,
+      return axios.post(
+        `${import.meta.env.VITE_API_URL}/posts`,
+        newPost,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    },
+    onSuccess: (res) => {
+      toast.success("Post created successfully!");
+      navigate(`/${res.data.slug}`);
+    },
+    onError: (error) => {
+      console.error("Post creation failed:", error.response?.data || error);
+      toast.error(error.response?.data?.error || "Something went wrong!");
+    },
   });
 
-  if (!deletedPost) {
-    return res.status(403).json("You can delete only your posts!");
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
 
-  res.status(200).json("Post has been deleted");
-};
+    // Validate form data
+    const title = formData.get("title");
+    const category = formData.get("category");
+    const desc = formData.get("desc");
 
-export const featurePost = async (req, res) => {
-  const clerkUserId = req.auth.userId;
-  const postId = req.body.postId;
+    if (!title || !category || !desc || !value) {
+      toast.error("All fields are required!");
+      return;
+    }
 
-  if (!clerkUserId) {
-    return res.status(401).json("Not authenticated!");
-  }
+    const data = {
+      img: cover?.filePath || "", // Cover image path
+      title,
+      category,
+      desc,
+      content: value, // Editor content
+    };
 
-  const role = req.auth.sessionClaims?.metadata?.role || "user";
+    mutation.mutate(data);
+  };
 
-  if (role !== "admin") {
-    return res.status(403).json("You cannot feature posts!");
-  }
+  // Conditional rendering based on authentication state
+  if (!isLoaded) return <div>Loading...</div>;
+  if (isLoaded && !isSignedIn) return <div>You need to sign in!</div>;
 
-  const post = await Post.findById(postId);
+  return (
+    <div className="h-[calc(100vh-64px)] flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold">Create a New Post</h1>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-6 p-4 bg-gray-50 shadow rounded-md"
+      >
+        {/* Cover Image Upload */}
+        <Upload type="image" setProgress={setProgress} setData={setCover}>
+          <button
+            type="button"
+            className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md"
+          >
+            Add Cover Image
+          </button>
+        </Upload>
 
-  if (!post) {
-    return res.status(404).json("Post not found!");
-  }
+        {/* Title Input */}
+        <input
+          type="text"
+          name="title"
+          placeholder="Enter your title here"
+          className="p-3 border rounded-md w-full"
+          required
+        />
 
-  const isFeatured = post.isFeatured;
+        {/* Category Selection */}
+        <select
+          name="category"
+          className="p-3 border rounded-md w-full"
+          required
+        >
+          <option value="general">General</option>
+          <option value="web-design">Web Design</option>
+          <option value="development">Development</option>
+          <option value="databases">Databases</option>
+          <option value="marketing">Marketing</option>
+        </select>
 
-  const updatedPost = await Post.findByIdAndUpdate(
-    postId,
-    {
-      isFeatured: !isFeatured,
-    },
-    { new: true }
+        {/* Short Description */}
+        <textarea
+          name="desc"
+          placeholder="Write a short description..."
+          className="p-3 border rounded-md w-full"
+          rows="4"
+          required
+        ></textarea>
+
+        {/* Content Editor */}
+        <ReactQuill
+          theme="snow"
+          value={value}
+          onChange={setValue}
+          className="border rounded-md"
+        />
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className={`px-4 py-2 rounded-md text-white ${
+            mutation.isLoading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          disabled={mutation.isLoading || progress > 0}
+        >
+          {mutation.isLoading ? "Creating Post..." : "Create Post"}
+        </button>
+
+        {/* Progress Indicator */}
+        {progress > 0 && (
+          <p className="text-sm text-gray-500">
+            Uploading: {progress}% complete
+          </p>
+        )}
+      </form>
+    </div>
   );
-
-  res.status(200).json(updatedPost);
 };
 
-export const uploadAuth = async (req, res) => {
-  const result = imagekit.getAuthenticationParameters();
-  res.send(result);
-};
+export default Write;
