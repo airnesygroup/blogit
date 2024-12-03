@@ -1,7 +1,7 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import { clerkClient } from '@clerk/clerk-sdk-node'; // Ensure Clerk's SDK is imported
+const { clerkClient, requireSession } = require('@clerk/clerk-sdk-node'); // Make sure Clerk is properly required
 
 
 // Hardcoded credentials for ImageKit
@@ -98,54 +98,47 @@ export const getPost = async (req, res) => {
 
 
 
-export const createPost = async (req, res) => {
-  try {
-    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
-    console.log("Token received at backend:", receivedToken); // Log received token
 
-    if (!receivedToken) {
-      return res.status(400).json("No token provided!");
+export const createPost = [
+  // Middleware to ensure user is authenticated
+  requireSession(),
+
+  // Main handler for creating a post
+  async (req, res) => {
+    try {
+      // Extract the userId from the session
+      const clerkUserId = req.auth.userId; // Clerk Express middleware automatically adds userId to req.auth
+      console.log("Verified userId from Clerk:", clerkUserId);
+
+      // Check if the user exists in your system
+      const existingUser = await User.findOne({ clerkUserId });
+      if (!existingUser) {
+        return res.status(404).json("User not found!");
+      }
+
+      // Generate a slug for the post title
+      let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+      let existingPost = await Post.findOne({ slug });
+
+      // Handle duplicate slug
+      let counter = 2;
+      while (existingPost) {
+        slug = `${slug}-${counter}`;
+        existingPost = await Post.findOne({ slug });
+        counter++;
+      }
+
+      // Create and save the post
+      const newPost = new Post({ user: existingUser._id, slug, ...req.body });
+      const post = await newPost.save();
+
+      return res.status(200).json(post);
+    } catch (error) {
+      console.error("Error during post creation:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
-
-    // Verify the token with Clerk
-    const user = await clerkClient.users.verifySessionToken(receivedToken);
-    if (!user) {
-      return res.status(401).json("Invalid token or not authenticated!");
-    }
-
-    // Clerk will automatically provide the userId if the token is valid
-    const clerkUserId = user.id;
-    console.log("Verified userId from Clerk:", clerkUserId);
-
-    // Check if the user exists in your system
-    const existingUser = await User.findOne({ clerkUserId });
-    if (!existingUser) {
-      return res.status(404).json("User not found!");
-    }
-
-    // Generate a slug for the post title
-    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-    let existingPost = await Post.findOne({ slug });
-
-    // Handle duplicate slug
-    let counter = 2;
-    while (existingPost) {
-      slug = `${slug}-${counter}`;
-      existingPost = await Post.findOne({ slug });
-      counter++;
-    }
-
-    // Create and save the post
-    const newPost = new Post({ user: existingUser._id, slug, ...req.body });
-    const post = await newPost.save();
-
-    return res.status(200).json(post);
-  } catch (error) {
-    console.error("Error during post creation:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
+  },
+];
 
 
 
