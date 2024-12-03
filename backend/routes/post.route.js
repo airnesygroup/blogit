@@ -1,4 +1,6 @@
 import express from "express";
+import { requireAuth } from "@clerk/express";
+
 import {
   getPosts,
   getPost,
@@ -15,7 +17,8 @@ router.get("/upload-auth", uploadAuth);
 
 router.get("/", getPosts);
 router.get("/:slug", increaseVisit, getPost);
-router.post("/", createPost); 
+router.post("/", requireAuth(), createPost);
+
 router.delete("/:id", deletePost);
 router.patch("/feature", featurePost);
 

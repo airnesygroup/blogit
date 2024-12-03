@@ -98,39 +98,41 @@ export const getPost = async (req, res) => {
 
 
 export const createPost = async (req, res) => {
-  console.log("Headers:", req.headers);
-console.log("Auth Object:", req.auth);
+  try {
+    const clerkUserId = req.auth.userId; // Populated by Clerk middleware
 
-  const clerkUserId = req.auth.userId; // Populated by Clerk middleware
+    if (!clerkUserId) {
+      return res.status(401).json("Not authenticated!");
+    }
 
-  if (!clerkUserId) {
-    return res.status(401).json("Not authenticated!");
+    // Find the user based on Clerk user ID
+    const user = await User.findOne({ clerkUserId });
+    if (!user) {
+      return res.status(404).json("User not found!");
+    }
+
+    // Generate slug
+    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+    let existingPost = await Post.findOne({ slug });
+
+    // Handle duplicate slug
+    let counter = 2;
+    while (existingPost) {
+      slug = `${slug}-${counter}`;
+      existingPost = await Post.findOne({ slug });
+      counter++;
+    }
+
+    // Create and save the post
+    const newPost = new Post({ user: user._id, slug, ...req.body });
+    const post = await newPost.save();
+
+    return res.status(200).json(post);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  const user = await User.findOne({ clerkUserId });
-
-  if (!user) {
-    return res.status(404).json("User not found!");
-  }
-
-  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-
-  let existingPost = await Post.findOne({ slug });
-
-  let counter = 2;
-
-  while (existingPost) {
-    slug = `${slug}-${counter}`;
-    existingPost = await Post.findOne({ slug });
-    counter++;
-  }
-
-  const newPost = new Post({ user: user._id, slug, ...req.body });
-
-  const post = await newPost.save();
-  res.status(200).json(post);
 };
-
 
 
 
