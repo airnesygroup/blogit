@@ -34,16 +34,10 @@ const Write = () => {
 
   const mutation = useMutation({
     mutationFn: async (newPost) => {
-      const token = await getToken(); // Fetch Clerk auth token
       return axios.post(
         `${import.meta.env.VITE_API_URL}/posts`,
         newPost,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+       
       );
     },
     onSuccess: (res) => {
