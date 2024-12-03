@@ -1,79 +1,73 @@
 import express from "express";
 import mongoose from "mongoose";
-import dotenv from "dotenv"; // Ensure dotenv is imported first
-import connectDB from "../lib/connectDB.js";
+import dotenv from "dotenv";
+import { createClerkClient } from '@clerk/backend'
+import { clerkMiddleware } from '@clerk/express'
 import userRouter from "../routes/user.route.js";
 import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
-import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
-// Load environment variables from .env file
-dotenv.config(); // Ensure .env is loaded at the top
 
-// Server setup
+dotenv.config();
+
 const app = express();
 
-// Middleware for parsing JSON body
-app.use(express.json()); // This ensures the body is parsed as JSON
+// Initialize Clerk client
+const clerkClient = createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY 
+});
 
-// CORS middleware
+app.use(express.json());
+
 app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
-      'https://blogifiyclient.vercel.app', // Production client URL
-      'http://localhost:5173',  // Local development
+      'https://blogifiyclient.vercel.app',
+      'http://localhost:5173', 
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true); // Allow the request
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS')); // Deny the request
+      callback(new Error('Not allowed by CORS'));
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// API routes
-app.use(ClerkExpressWithAuth());
+// Add Clerk middleware
+app.use(clerkMiddleware());
 
 app.use("/users", userRouter);
 app.use("/posts", postRouter);
 app.use("/comments", commentRouter);
-app.use("/webhook", webhookRouter); // Make sure this route is properly set up
+app.use("/webhook", webhookRouter);
 
-// Add the route for creating posts (for example, a POST request to /posts)
-app.post("/posts", createPost);  // This will call the createPost controller when posting to /posts
+app.post("/posts", createPost);
 
-// Error handling middleware
-app.use((error, req, res, next) => {
-  res.status(error.status || 500);
-  res.json({
-    message: error.message || "Something went wrong!",
-    status: error.status,
-    stack: error.stack,
-  });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(401).send('Unauthenticated!')
 });
 
-// Ensure DATABASE_URL is properly loaded from .env
 const mongoURI = "mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog";
 if (!mongoURI) {
   console.error("DATABASE_URL is missing in .env");
-  process.exit(1); // Exit if no DB URL is available
+  process.exit(1);
 }
 
-// Connect to MongoDB
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected successfully!"))
   .catch(err => {
     console.error("Database connection error:", err);
-    process.exit(1); // Exit the app if DB connection fails
+    process.exit(1);
   });
 
-// Server start
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Example app listening at http://localhost:${port}`)
 });
