@@ -35,11 +35,11 @@ const Write = () => {
 
   const mutation = useMutation({
     mutationFn: async (newPost) => {
-        const token = await getToken();
-        return axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, newPost, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Ensure correct format
-          
+      const token = await getToken();
+      console.log("Token created in frontend:", token); // Log the token from frontend
+      return axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, newPost, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Ensure correct format
         },
       });
     },
@@ -48,6 +48,7 @@ const Write = () => {
       navigate(`/${res.data.slug}`);
     },
   });
+  
 
   if (!isLoaded) {
     return <div className="">Loading...</div>;

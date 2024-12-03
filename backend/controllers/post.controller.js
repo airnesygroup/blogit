@@ -99,7 +99,11 @@ export const getPost = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId; // Clerk middleware will populate this
+    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
+    console.log("Token received at backend:", receivedToken); // Log received token
+
+    const clerkUserId = req.auth?.userId; // Clerk middleware will populate this
+    console.log("Expected userId for token verification:", clerkUserId);
 
     if (!clerkUserId) {
       return res.status(401).json("Not authenticated!");
@@ -109,8 +113,6 @@ export const createPost = async (req, res) => {
     if (!user) {
       return res.status(404).json("User not found!");
     }
-
-
 
     // Generate slug
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
@@ -130,11 +132,11 @@ export const createPost = async (req, res) => {
 
     return res.status(200).json(post);
   } catch (error) {
-    console.error(error);
+    console.error("Error during post creation:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-       
+  
 
 
 
