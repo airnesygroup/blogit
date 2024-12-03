@@ -37,7 +37,7 @@ const Write = () => {
     mutationFn: async (newPost) => {
       const token = await getToken();
       console.log("Token created in frontend:", token); // Log the token from frontend
-      return axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, newPost, {
+      return axios.post(`${import.meta.env.VITE_API_URL}/posts`, newPost, {
         headers: {
           Authorization: `Bearer ${token}`, // Ensure correct format
         },
