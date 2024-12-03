@@ -1,7 +1,7 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-const { Clerk } = require('@clerk/express');
+import { Clerk } from '@clerk/express';  // If you're using Clerk in your Express.js application
 
 
 // Hardcoded credentials for ImageKit
