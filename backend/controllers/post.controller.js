@@ -96,26 +96,28 @@ export const getPost = async (req, res) => {
 
 
 
+const Post = require("../models/post.model.js"; // Mongoose model for Post
+const User = require("..//models/user.model.js"; // Mongoose model for User
 
-export const createPost = async (req, res) => {
+exports.createPost = async (req, res) => {
   try {
-    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
-    console.log("Token received at backend:", receivedToken); // Log received token
+    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract token
+    console.log("Token received at backend:", receivedToken);
 
-    const clerkUserId = req.auth?.userId; // Clerk middleware will populate this
-    console.log("Expected userId for token verification:", clerkUserId);
+    const clerkUserId = req.auth?.userId; // Clerk middleware should populate this
+    console.log("Extracted Clerk userId:", clerkUserId);
 
     if (!clerkUserId) {
-      return res.status(401).json("Not authenticated!");
+      return res.status(401).json({ error: "Not authenticated!" });
     }
 
     const user = await User.findOne({ clerkUserId });
     if (!user) {
-      return res.status(404).json("User not found!");
+      return res.status(404).json({ error: "User not found!" });
     }
 
-    // Generate slug
-    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+    // Generate slug for the post
+    let slug = req.body.title.toLowerCase().replace(/\s+/g, "-");
     let existingPost = await Post.findOne({ slug });
 
     // Handle duplicate slug
@@ -126,25 +128,19 @@ export const createPost = async (req, res) => {
       counter++;
     }
 
-    // Create and save the post
-    const newPost = new Post({ user: user._id, slug, ...req.body });
-    const post = await newPost.save();
+    const newPost = new Post({
+      user: user._id,
+      slug,
+      ...req.body,
+    });
 
-    return res.status(200).json(post);
+    const post = await newPost.save();
+    return res.status(201).json(post);
   } catch (error) {
-    console.error("Error during post creation:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Error in createPost:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
-  
-
-
-
-
-
-
-
-
 
 
 
