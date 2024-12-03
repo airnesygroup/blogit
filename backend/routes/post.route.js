@@ -1,6 +1,4 @@
 import express from "express";
-import { requireAuth } from "@clerk/express";
-
 import {
   getPosts,
   getPost,
@@ -15,12 +13,9 @@ const router = express.Router();
 
 router.get("/upload-auth", uploadAuth);
 
-// Protect routes that require authentication
-
 router.get("/", getPosts);
 router.get("/:slug", increaseVisit, getPost);
-router.post("/", requireAuth(), createPost);
-
+router.post("/", createPost);
 router.delete("/:id", deletePost);
 router.patch("/feature", featurePost);
 
