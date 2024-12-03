@@ -17,7 +17,12 @@ import "react-toastify/dist/ReactToastify.css";
 const queryClient = new QueryClient();
 
 // Hardcoded Clerk publishable key
+// Import your publishable key
+const PUBLISHABLE_KEY = import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
+if (!PUBLISHABLE_KEY) {
+  throw new Error('Add your Clerk publishable key to the .env.local file')
+}
 const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -52,8 +57,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ClerkProvider >
-      <QueryClientProvider client={queryClient}>
+<ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+        <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <ToastContainer position="bottom-right" />
       </QueryClientProvider>
