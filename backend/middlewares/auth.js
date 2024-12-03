@@ -1,10 +1,12 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, requireAuth } from '@clerk/express';
+import express from 'express';
 
-// Add publicRoutes if needed
-export default clerkMiddleware({
-  publicRoutes: ["/"]  
+const app = express();
+
+// Apply centralized middleware
+app.use(clerkMiddleware());
+
+// Apply middleware to a specific route
+app.get('/protected', requireAuth(), (req, res) => {
+  res.send('This is a protected route');
 });
-
-export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
-};
