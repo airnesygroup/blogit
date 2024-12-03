@@ -10,15 +10,22 @@ import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
 
+
 dotenv.config();
 
 const app = express();
 
 // Initialize Clerk client
-const clerkClient = createClerkClient({ 
+const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
   publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY 
-});
+})
+
+app.use(clerkMiddleware({ clerkClient }))
+
+
+
+
 
 app.use(express.json());
 
