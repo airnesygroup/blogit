@@ -101,7 +101,7 @@ export const getPost = async (req, res) => {
 
 export const createPost = [
   // Middleware to ensure user is authenticated
-  requireSession(),
+  clerkClient(),
 
   // Main handler for creating a post
   async (req, res) => {
