@@ -1,7 +1,6 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import { clerkClient, clerkExpressRequireSession } from '@clerk/express';  // Update import
 
 // Hardcoded credentials for ImageKit
 const imagekit = new ImageKit({
