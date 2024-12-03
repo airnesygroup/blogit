@@ -99,17 +99,18 @@ export const getPost = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    const clerkUserId = req.auth.userId; // Populated by Clerk middleware
+    const clerkUserId = req.auth.userId; // Clerk middleware will populate this
 
     if (!clerkUserId) {
       return res.status(401).json("Not authenticated!");
     }
 
-    // Find the user based on Clerk user ID
     const user = await User.findOne({ clerkUserId });
     if (!user) {
       return res.status(404).json("User not found!");
     }
+
+
 
     // Generate slug
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
@@ -133,7 +134,7 @@ export const createPost = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
+       
 
 
 

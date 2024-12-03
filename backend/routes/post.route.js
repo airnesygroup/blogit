@@ -14,6 +14,9 @@ import increaseVisit from "../middlewares/increaseVisit.js";
 const router = express.Router();
 
 router.get("/upload-auth", uploadAuth);
+import { requireAuth } from "@clerk/express";
+
+// Protect routes that require authentication
 
 router.get("/", getPosts);
 router.get("/:slug", increaseVisit, getPost);
