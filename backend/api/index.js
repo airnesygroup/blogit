@@ -43,7 +43,6 @@ app.use(cors({
 }));
 
 // Add Clerk middleware
-app.use(clerkMiddleware());
 
 app.use("/users", userRouter);
 app.use("/posts", postRouter);
