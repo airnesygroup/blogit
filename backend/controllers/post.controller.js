@@ -1,7 +1,7 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import { Clerk } from '@clerk/express';  // If you're using Clerk in your Express.js application
+import Clerk from '@clerk/express';
 
 
 // Hardcoded credentials for ImageKit
