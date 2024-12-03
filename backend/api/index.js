@@ -1,29 +1,26 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient } from '@clerk/backend'
+import { clerkMiddleware } from '@clerk/express'
 import userRouter from "../routes/user.route.js";
 import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
-import 'dotenv/config';
-import { clerkMiddleware } from '@clerk/express'; // Only import clerkMiddleware
+
 
 dotenv.config();
 
 const app = express();
 
-// Initialize Clerk Client only once
-const clerkClient = createClerkClient({
+// Initialize Clerk client
+const clerkClient = createClerkClient({ 
   secretKey: process.env.CLERK_SECRET_KEY,
-  
-publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY
+  publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY 
 });
 
-// Use Clerk middleware
-app.use(clerkMiddleware({ clerkClient }));
 
 app.use(express.json());
 
@@ -45,6 +42,7 @@ app.use(cors({
 }));
 
 // Add Clerk middleware
+app.use(clerkMiddleware());
 
 app.use("/users", userRouter);
 app.use("/posts", postRouter);
