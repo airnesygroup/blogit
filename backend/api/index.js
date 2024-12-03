@@ -10,7 +10,7 @@ import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
 import 'dotenv/config';
 import { clerkMiddleware } from '@clerk/express'; // Import Clerk middleware
-import { Clerk } from '@clerk/clerk-sdk-node'; // Import Clerk SDK for token verification
+import * as Clerk from '@clerk/clerk-sdk-node'; // Import Clerk SDK
 
 dotenv.config();
 
