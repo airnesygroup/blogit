@@ -1,14 +1,13 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-const { clerkClient, requireSession } = require('@clerk/clerk-sdk-node'); // Make sure Clerk is properly required
-
+import session from "express-session";  // Required for session handling
 
 // Hardcoded credentials for ImageKit
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/blogifiy",  // Replace with your actual URL Endpoint
   publicKey: "public_F6gpylB1rbMQM244+yeFKTj9xzI=",  // Replace with your actual Public Key
-  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM= "  // Replace with your actual Private Key
+  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM="  // Replace with your actual Private Key
 });
 
 export const getPosts = async (req, res) => {
@@ -91,56 +90,44 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
-
-
-
-
-
-
-
-export const createPost = [
-  // Middleware to ensure user is authenticated
-  clerkClient(),
-
-  // Main handler for creating a post
-  async (req, res) => {
-    try {
-      // Extract the userId from the session
-      const clerkUserId = req.auth.userId; // Clerk Express middleware automatically adds userId to req.auth
-      console.log("Verified userId from Clerk:", clerkUserId);
-
-      // Check if the user exists in your system
-      const existingUser = await User.findOne({ clerkUserId });
-      if (!existingUser) {
-        return res.status(404).json("User not found!");
-      }
-
-      // Generate a slug for the post title
-      let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-      let existingPost = await Post.findOne({ slug });
-
-      // Handle duplicate slug
-      let counter = 2;
-      while (existingPost) {
-        slug = `${slug}-${counter}`;
-        existingPost = await Post.findOne({ slug });
-        counter++;
-      }
-
-      // Create and save the post
-      const newPost = new Post({ user: existingUser._id, slug, ...req.body });
-      const post = await newPost.save();
-
-      return res.status(200).json(post);
-    } catch (error) {
-      console.error("Error during post creation:", error);
-      return res.status(500).json({ message: "Internal server error" });
+export const createPost = async (req, res) => {
+  try {
+    // Middleware to ensure user is authenticated using session
+    if (!req.session.userId) {
+      return res.status(401).json("User not authenticated");
     }
-  },
-];
 
+    const clerkUserId = req.session.userId; // User ID stored in session
+    console.log("Authenticated user ID from session:", clerkUserId);
 
+    // Check if the user exists in your system
+    const existingUser = await User.findOne({ clerkUserId });
+    if (!existingUser) {
+      return res.status(404).json("User not found!");
+    }
+
+    // Generate a slug for the post title
+    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+    let existingPost = await Post.findOne({ slug });
+
+    // Handle duplicate slug
+    let counter = 2;
+    while (existingPost) {
+      slug = `${slug}-${counter}`;
+      existingPost = await Post.findOne({ slug });
+      counter++;
+    }
+
+    // Create and save the post
+    const newPost = new Post({ user: existingUser._id, slug, ...req.body });
+    const post = await newPost.save();
+
+    return res.status(200).json(post);
+  } catch (error) {
+    console.error("Error during post creation:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 
