@@ -1,96 +1,87 @@
-import React, { useState, useEffect } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import ReactQuill from "react-quill";
+import "react-quill-new/dist/quill.snow.css";
+import ReactQuill from "react-quill-new";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Upload from "../components/Upload";
 
-import "react-quill/dist/quill.snow.css"; // Import React Quill styles
-
 const Write = () => {
-  const { isLoaded, isSignedIn } = useUser();
   const [value, setValue] = useState("");
-  const [cover, setCover] = useState(""); // Store cover image data
-  const [img, setImg] = useState(""); // Store uploaded image
-  const [video, setVideo] = useState(""); // Store uploaded video
-  const [progress, setProgress] = useState(0); // For tracking file upload progress
-
-  const { getToken } = useAuth(); // Clerk auth hook to get the token
-  const navigate = useNavigate();
+  const [cover, setCover] = useState("");
+  const [img, setImg] = useState("");
+  const [video, setVideo] = useState("");
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (img) {
-      setValue((prev) => prev + `<p><img src="${img.url}"/></p>`);
-    }
+    img && setValue((prev) => prev + `<p><image src="${img.url}"/></p>`);
   }, [img]);
 
   useEffect(() => {
-    if (video) {
-      setValue((prev) => prev + `<p><iframe class="ql-video" src="${video.url}"/></p>`);
-    }
+    video &&
+      setValue(
+        (prev) => prev + `<p><iframe class="ql-video" src="${video.url}"/></p>`
+      );
   }, [video]);
+
+  const navigate = useNavigate();
 
   const mutation = useMutation({
     mutationFn: async (newPost) => {
-      return axios.post(
-        `${import.meta.env.VITE_API_URL}/posts`,
-        newPost,
-       
-      );
+      return axios.post(`${import.meta.env.VITE_API_URL}/posts`, newPost, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     },
     onSuccess: (res) => {
-      toast.success("Post has been created!");
-      navigate(`/${res.data.slug}`); // Navigate to the newly created post
-    },
-    onError: (error) => {
-      toast.error(`Failed to create post: ${error.message}`);
+      toast.success("Post has been created");
+      navigate(`/${res.data.slug}`);
     },
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
 
     const data = {
+      img: cover.filePath || "",
       title: formData.get("title"),
       category: formData.get("category"),
       desc: formData.get("desc"),
       content: value,
-      img: cover.filePath || "", // Attach cover image if available
     };
 
-    try {
-      mutation.mutate(data); // Call the mutation to create the post
-    } catch (error) {
-      toast.error("Error creating post.");
-    }
+    console.log(data);
+
+    mutation.mutate(data);
   };
 
-  if (!isLoaded) return <div>Loading...</div>;
-  if (isLoaded && !isSignedIn) return <div>You need to log in to create a post.</div>;
-
   return (
-    <div className="h-full flex flex-col gap-6 p-6">
-      <h1 className="text-xl font-light">Create a New Post</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col gap-6">
+      <h1 className="text-cl font-light">Create a New Post</h1>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 flex-1 mb-6">
         <Upload type="image" setProgress={setProgress} setData={setCover}>
-          <button className="p-2 shadow-md rounded-xl text-sm text-gray-500 bg-white">
+          <button className="w-max p-2 shadow-md rounded-xl text-sm text-gray-500 bg-white">
             Add a cover image
           </button>
         </Upload>
-
         <input
+          className="text-4xl font-semibold bg-transparent outline-none"
           type="text"
           placeholder="My Awesome Story"
           name="title"
-          className="text-2xl font-semibold bg-transparent outline-none"
         />
-
-        <div className="flex gap-4">
-          <label className="text-sm">Choose a category:</label>
-          <select name="category" className="p-2 rounded-xl bg-white shadow-md">
+        <div className="flex items-center gap-4">
+          <label htmlFor="" className="text-sm">
+            Choose a category:
+          </label>
+          <select
+            name="category"
+            id=""
+            className="p-2 rounded-xl bg-white shadow-md"
+          >
             <option value="general">General</option>
             <option value="web-design">Web Design</option>
             <option value="development">Development</option>
@@ -99,37 +90,35 @@ const Write = () => {
             <option value="marketing">Marketing</option>
           </select>
         </div>
-
         <textarea
           className="p-4 rounded-xl bg-white shadow-md"
           name="desc"
           placeholder="A Short Description"
         />
-
-        <div className="flex gap-4">
-          <Upload type="image" setProgress={setProgress} setData={setImg}>
-            🌆
-          </Upload>
-          <Upload type="video" setProgress={setProgress} setData={setVideo}>
-            ▶️
-          </Upload>
+        <div className="flex flex-1 ">
+          <div className="flex flex-col gap-2 mr-2">
+            <Upload type="image" setProgress={setProgress} setData={setImg}>
+              🌆
+            </Upload>
+            <Upload type="video" setProgress={setProgress} setData={setVideo}>
+              ▶️
+            </Upload>
+          </div>
+          <ReactQuill
+            theme="snow"
+            className="flex-1 rounded-xl bg-white shadow-md"
+            value={value}
+            onChange={setValue}
+            readOnly={0 < progress && progress < 100}
+          />
         </div>
-
-        <ReactQuill
-          theme="snow"
-          value={value}
-          onChange={setValue}
-          readOnly={progress > 0 && progress < 100}
-          className="flex-1 rounded-xl bg-white shadow-md"
-        />
-
         <button
-          type="submit"
-          disabled={mutation.isLoading || (progress > 0 && progress < 100)}
-          className="p-4 rounded-xl text-lg bg-blue-500 text-white shadow-md"
+          disabled={mutation.isPending || (0 < progress && progress < 100)}
+          className="bg-blue-800 text-white font-medium rounded-xl mt-4 p-2 w-36 disabled:bg-blue-400 disabled:cursor-not-allowed"
         >
-          {mutation.isLoading ? "Posting..." : "Post"}
+          {mutation.isPending ? "Loading..." : "Send"}
         </button>
+        {"Progress:" + progress}
       </form>
     </div>
   );
