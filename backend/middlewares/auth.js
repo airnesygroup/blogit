@@ -3,10 +3,10 @@ import express from 'express';
 
 const app = express();
 
-// Apply centralized middleware
+// Apply Clerk middleware globally
 app.use(clerkMiddleware());
 
-// Apply middleware to a specific route
+// Example protected route
 app.get('/protected', requireAuth(), (req, res) => {
   res.send('This is a protected route');
 });
