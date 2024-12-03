@@ -1,4 +1,3 @@
-import { useAuth, useUser } from "@clerk/clerk-react";
 import "react-quill-new/dist/quill.snow.css";
 import ReactQuill from "react-quill-new";
 import { useMutation } from "@tanstack/react-query";
@@ -9,7 +8,6 @@ import { toast } from "react-toastify";
 import Upload from "../components/Upload";
 
 const Write = () => {
-  const { isLoaded, isSignedIn } = useUser();
   const [value, setValue] = useState("");
   const [cover, setCover] = useState("");
   const [img, setImg] = useState("");
@@ -29,14 +27,11 @@ const Write = () => {
 
   const navigate = useNavigate();
 
-  const { getToken } = useAuth();
-
   const mutation = useMutation({
     mutationFn: async (newPost) => {
-      const token = await getToken();
       return axios.post(`${import.meta.env.VITE_API_URL}/posts`, newPost, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
     },
@@ -45,14 +40,6 @@ const Write = () => {
       navigate(`/${res.data.slug}`);
     },
   });
-
-  if (!isLoaded) {
-    return <div className="">Loading...</div>;
-  }
-
-  if (isLoaded && !isSignedIn) {
-    return <div className="">You should login!</div>;
-  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -132,7 +119,6 @@ const Write = () => {
           {mutation.isPending ? "Loading..." : "Send"}
         </button>
         {"Progress:" + progress}
-        {/* {mutation.isError && <span>{mutation.error.message}</span>} */}
       </form>
     </div>
   );
