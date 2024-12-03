@@ -1,65 +1,84 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { useMutation } from "@tanstack/react-query";
+import "react-quill-new/dist/quill.snow.css";
 import ReactQuill from "react-quill-new";
+import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Upload from "../components/Upload";
-import "react-quill-new/dist/quill.snow.css";
 
 const Write = () => {
   const { isLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
-  const navigate = useNavigate();
-
   const [value, setValue] = useState("");
   const [cover, setCover] = useState("");
+  const [img, setImg] = useState("");
+  const [video, setVideo] = useState("");
   const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    img && setValue((prev) => prev + `<p><img src="${img.url}" /></p>`);
+  }, [img]);
+
+  useEffect(() => {
+    video &&
+      setValue(
+        (prev) => prev + `<p><iframe class="ql-video" src="${video.url}"></iframe></p>`
+      );
+  }, [video]);
+
+  const navigate = useNavigate();
+  const { getToken } = useAuth();
 
   const mutation = useMutation({
     mutationFn: async (newPost) => {
-      const token = await getToken(); // Retrieve token
-      console.log("Frontend Token:", token);
+      try {
+        const token = await getToken();
+        console.log("Token created in frontend:", token); // Log the token from frontend
 
-      return axios.post(
-        `${import.meta.env.VITE_API_URL}/posts`,
-        newPost,
-        {
+        // Send the token in Authorization header
+        return axios.post(`${import.meta.env.VITE_API_URL}/posts`, newPost, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
+        });
+      } catch (error) {
+        console.error("Error in frontend mutation:", error);
+        throw new Error("Error creating post");
+      }
     },
     onSuccess: (res) => {
-      toast.success("Post created successfully!");
+      toast.success("Post has been created");
       navigate(`/${res.data.slug}`);
     },
     onError: (error) => {
-      console.error("Post creation failed:", error.response?.data || error);
-      toast.error(error.response?.data?.error || "Something went wrong!");
+      toast.error("Failed to create post: " + error.message);
     },
   });
 
-  const handleSubmit = async (e) => {
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  if (isLoaded && !isSignedIn) {
+    return <div>You should login!</div>;
+  }
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
 
     const data = {
-      img: cover?.filePath || "",
+      img: cover.filePath || "",
       title: formData.get("title"),
       category: formData.get("category"),
       desc: formData.get("desc"),
       content: value,
     };
 
+    console.log(data);
     mutation.mutate(data);
   };
-
-  if (!isLoaded) return <div>Loading...</div>;
-  if (isLoaded && !isSignedIn) return <div>You need to sign in!</div>;
-
 
   return (
     <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col gap-6">
@@ -82,7 +101,6 @@ const Write = () => {
           </label>
           <select
             name="category"
-            id=""
             className="p-2 rounded-xl bg-white shadow-md"
           >
             <option value="general">General</option>
@@ -98,7 +116,7 @@ const Write = () => {
           name="desc"
           placeholder="A Short Description"
         />
-        <div className="flex flex-1 ">
+        <div className="flex flex-1">
           <div className="flex flex-col gap-2 mr-2">
             <Upload type="image" setProgress={setProgress} setData={setImg}>
               🌆
@@ -122,7 +140,6 @@ const Write = () => {
           {mutation.isPending ? "Loading..." : "Send"}
         </button>
         {"Progress:" + progress}
-        {/* {mutation.isError && <span>{mutation.error.message}</span>} */}
       </form>
     </div>
   );

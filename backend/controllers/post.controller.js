@@ -1,155 +1,223 @@
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { useMutation } from "@tanstack/react-query";
-import ReactQuill from "react-quill-new";
-import axios from "axios";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import Upload from "../components/Upload";
-import "react-quill-new/dist/quill.snow.css";
+import ImageKit from "imagekit";
+import Post from "../models/post.model.js";
+import User from "../models/user.model.js";
+import { clerkClient } from '@clerk/clerk-sdk-node'; // Ensure Clerk's SDK is imported
 
-const Write = () => {
-  const { isLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
-  const navigate = useNavigate();
 
-  const [value, setValue] = useState(""); // Editor content
-  const [cover, setCover] = useState(""); // Cover image data
-  const [progress, setProgress] = useState(0); // Upload progress
+// Hardcoded credentials for ImageKit
+const imagekit = new ImageKit({
+  urlEndpoint: "https://ik.imagekit.io/blogifiy",  // Replace with your actual URL Endpoint
+  publicKey: "public_F6gpylB1rbMQM244+yeFKTj9xzI=",  // Replace with your actual Public Key
+  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM= "  // Replace with your actual Private Key
+});
 
-  // Mutation for posting data
-  const mutation = useMutation({
-    mutationFn: async (newPost) => {
-      const token = await getToken(); // Get the user's token
-      console.log("Frontend Token:", token);
+export const getPosts = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 2;
 
-      return axios.post(
-        `${import.meta.env.VITE_API_URL}/posts`,
-        newPost,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-    },
-    onSuccess: (res) => {
-      toast.success("Post created successfully!");
-      navigate(`/${res.data.slug}`);
-    },
-    onError: (error) => {
-      console.error("Post creation failed:", error.response?.data || error);
-      toast.error(error.response?.data?.error || "Something went wrong!");
-    },
-  });
+  const query = {};
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+  console.log(req.query);
 
-    // Validate form data
-    const title = formData.get("title");
-    const category = formData.get("category");
-    const desc = formData.get("desc");
+  const cat = req.query.cat;
+  const author = req.query.author;
+  const searchQuery = req.query.search;
+  const sortQuery = req.query.sort;
+  const featured = req.query.featured;
 
-    if (!title || !category || !desc || !value) {
-      toast.error("All fields are required!");
-      return;
+  if (cat) {
+    query.category = cat;
+  }
+
+  if (searchQuery) {
+    query.title = { $regex: searchQuery, $options: "i" };
+  }
+
+  if (author) {
+    const user = await User.findOne({ username: author }).select("_id");
+
+    if (!user) {
+      return res.status(404).json("No post found!");
     }
 
-    const data = {
-      img: cover?.filePath || "", // Cover image path
-      title,
-      category,
-      desc,
-      content: value, // Editor content
-    };
+    query.user = user._id;
+  }
 
-    mutation.mutate(data);
-  };
+  let sortObj = { createdAt: -1 };
 
-  // Conditional rendering based on authentication state
-  if (!isLoaded) return <div>Loading...</div>;
-  if (isLoaded && !isSignedIn) return <div>You need to sign in!</div>;
+  if (sortQuery) {
+    switch (sortQuery) {
+      case "newest":
+        sortObj = { createdAt: -1 };
+        break;
+      case "oldest":
+        sortObj = { createdAt: 1 };
+        break;
+      case "popular":
+        sortObj = { visit: -1 };
+        break;
+      case "trending":
+        sortObj = { visit: -1 };
+        query.createdAt = {
+          $gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
+        };
+        break;
+      default:
+        break;
+    }
+  }
 
-  return (
-    <div className="h-[calc(100vh-64px)] flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Create a New Post</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-6 p-4 bg-gray-50 shadow rounded-md"
-      >
-        {/* Cover Image Upload */}
-        <Upload type="image" setProgress={setProgress} setData={setCover}>
-          <button
-            type="button"
-            className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md"
-          >
-            Add Cover Image
-          </button>
-        </Upload>
+  if (featured) {
+    query.isFeatured = true;
+  }
 
-        {/* Title Input */}
-        <input
-          type="text"
-          name="title"
-          placeholder="Enter your title here"
-          className="p-3 border rounded-md w-full"
-          required
-        />
+  const posts = await Post.find(query)
+    .populate("user", "username")
+    .sort(sortObj)
+    .limit(limit)
+    .skip((page - 1) * limit);
 
-        {/* Category Selection */}
-        <select
-          name="category"
-          className="p-3 border rounded-md w-full"
-          required
-        >
-          <option value="general">General</option>
-          <option value="web-design">Web Design</option>
-          <option value="development">Development</option>
-          <option value="databases">Databases</option>
-          <option value="marketing">Marketing</option>
-        </select>
+  const totalPosts = await Post.countDocuments();
+  const hasMore = page * limit < totalPosts;
 
-        {/* Short Description */}
-        <textarea
-          name="desc"
-          placeholder="Write a short description..."
-          className="p-3 border rounded-md w-full"
-          rows="4"
-          required
-        ></textarea>
-
-        {/* Content Editor */}
-        <ReactQuill
-          theme="snow"
-          value={value}
-          onChange={setValue}
-          className="border rounded-md"
-        />
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className={`px-4 py-2 rounded-md text-white ${
-            mutation.isLoading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-          disabled={mutation.isLoading || progress > 0}
-        >
-          {mutation.isLoading ? "Creating Post..." : "Create Post"}
-        </button>
-
-        {/* Progress Indicator */}
-        {progress > 0 && (
-          <p className="text-sm text-gray-500">
-            Uploading: {progress}% complete
-          </p>
-        )}
-      </form>
-    </div>
-  );
+  res.status(200).json({ posts, hasMore });
 };
 
-export default Write;
+export const getPost = async (req, res) => {
+  const post = await Post.findOne({ slug: req.params.slug }).populate(
+    "user",
+    "username img"
+  );
+  res.status(200).json(post);
+};
+
+
+
+
+
+
+
+
+export const createPost = async (req, res) => {
+  try {
+    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
+    console.log("Token received at backend:", receivedToken); // Log received token
+
+    if (!receivedToken) {
+      return res.status(400).json("No token provided!");
+    }
+
+    // Verify the token with Clerk
+    const user = await clerkClient.users.verifySessionToken(receivedToken);
+    if (!user) {
+      return res.status(401).json("Invalid token or not authenticated!");
+    }
+
+    // Clerk will automatically provide the userId if the token is valid
+    const clerkUserId = user.id;
+    console.log("Verified userId from Clerk:", clerkUserId);
+
+    // Check if the user exists in your system
+    const existingUser = await User.findOne({ clerkUserId });
+    if (!existingUser) {
+      return res.status(404).json("User not found!");
+    }
+
+    // Generate a slug for the post title
+    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+    let existingPost = await Post.findOne({ slug });
+
+    // Handle duplicate slug
+    let counter = 2;
+    while (existingPost) {
+      slug = `${slug}-${counter}`;
+      existingPost = await Post.findOne({ slug });
+      counter++;
+    }
+
+    // Create and save the post
+    const newPost = new Post({ user: existingUser._id, slug, ...req.body });
+    const post = await newPost.save();
+
+    return res.status(200).json(post);
+  } catch (error) {
+    console.error("Error during post creation:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+export const deletePost = async (req, res) => {
+  const clerkUserId = req.auth.userId;
+
+  if (!clerkUserId) {
+    return res.status(401).json("Not authenticated!");
+  }
+
+  const role = req.auth.sessionClaims?.metadata?.role || "user";
+
+  if (role === "admin") {
+    await Post.findByIdAndDelete(req.params.id);
+    return res.status(200).json("Post has been deleted");
+  }
+
+  const user = await User.findOne({ clerkUserId });
+
+  const deletedPost = await Post.findOneAndDelete({
+    _id: req.params.id,
+    user: user._id,
+  });
+
+  if (!deletedPost) {
+    return res.status(403).json("You can delete only your posts!");
+  }
+
+  res.status(200).json("Post has been deleted");
+};
+
+export const featurePost = async (req, res) => {
+  const clerkUserId = req.auth.userId;
+  const postId = req.body.postId;
+
+  if (!clerkUserId) {
+    return res.status(401).json("Not authenticated!");
+  }
+
+  const role = req.auth.sessionClaims?.metadata?.role || "user";
+
+  if (role !== "admin") {
+    return res.status(403).json("You cannot feature posts!");
+  }
+
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    return res.status(404).json("Post not found!");
+  }
+
+  const isFeatured = post.isFeatured;
+
+  const updatedPost = await Post.findByIdAndUpdate(
+    postId,
+    {
+      isFeatured: !isFeatured,
+    },
+    { new: true }
+  );
+
+  res.status(200).json(updatedPost);
+};
+
+export const uploadAuth = async (req, res) => {
+  const result = imagekit.getAuthenticationParameters();
+  res.send(result);
+};
