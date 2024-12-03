@@ -90,47 +90,56 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-export const createPost = [
-  // Middleware to ensure user is authenticated
-  clerkExpressRequireSession(),  // Use the new Clerk Express session middleware
 
-  // Main handler for creating a post
-  async (req, res) => {
-    try {
-      // Extract the userId from the session
-      const clerkUserId = req.auth.userId;  // This assumes that Clerk Express middleware is used
 
-      console.log("Verified userId from Clerk:", clerkUserId);
 
-      // Check if the user exists in your system
-      const existingUser = await User.findOne({ clerkUserId });
-      if (!existingUser) {
-        return res.status(404).json("User not found!");
-      }
 
-      // Generate a slug for the post title
-      let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-      let existingPost = await Post.findOne({ slug });
 
-      // Handle duplicate slug
-      let counter = 2;
-      while (existingPost) {
-        slug = `${slug}-${counter}`;
-        existingPost = await Post.findOne({ slug });
-        counter++;
-      }
 
-      // Create and save the post
-      const newPost = new Post({ user: existingUser._id, slug, ...req.body });
-      const post = await newPost.save();
 
-      return res.status(200).json(post);
-    } catch (error) {
-      console.error("Error during post creation:", error);
-      return res.status(500).json({ message: "Internal server error" });
+// controllers/postController.js
+
+export const createPost = async (req, res) => {
+  try {
+    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
+    console.log("Token received at backend:", receivedToken); // Log received token
+
+    // Verify the token
+    if (!receivedToken) {
+      return res.status(401).json("No token provided!");
     }
-  },
-];
+
+    // Verify the token with Clerk
+    const user = await Clerk.auth.verifySession(receivedToken);
+    if (!user) {
+      return res.status(401).json("Invalid or expired token!");
+    }
+
+    console.log("User authenticated:", user);
+
+    // Generate slug
+    let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+    let existingPost = await Post.findOne({ slug });
+
+    // Handle duplicate slug
+    let counter = 2;
+    while (existingPost) {
+      slug = `${slug}-${counter}`;
+      existingPost = await Post.findOne({ slug });
+      counter++;
+    }
+
+    // Create and save the post
+    const newPost = new Post({ user: user._id, slug, ...req.body });
+    const post = await newPost.save();
+
+    return res.status(200).json(post);
+  } catch (error) {
+    console.error("Error during post creation:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 
 
