@@ -1,6 +1,7 @@
 import { clerkMiddleware, requireAuth } from '@clerk/express';
 import express from 'express';
 
+
 const app = express();
 
 // Apply Clerk middleware globally

@@ -9,6 +9,7 @@ import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
 import 'dotenv/config';
+
 import { clerkMiddleware } from '@clerk/express'; // Only import clerkMiddleware
 
 dotenv.config();

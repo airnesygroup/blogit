@@ -1,6 +1,8 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+const { Clerk } = require('@clerk/express');
+
 
 // Hardcoded credentials for ImageKit
 const imagekit = new ImageKit({
