@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
-import { clerkClient, clerkMiddleware } from '@clerk/express'
+import dotenv from "dotenv";
+import { createClerkClient } from '@clerk/backend'
 import userRouter from "../routes/user.route.js";
 import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
@@ -8,11 +9,14 @@ import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
 import 'dotenv/config'
+import { clerkClient, clerkMiddleware } from '@clerk/express'
+
+
+
+dotenv.config();
 
 const app = express()
 
-
-// Initialize Clerk client
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
 })
@@ -73,4 +77,3 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
-});
