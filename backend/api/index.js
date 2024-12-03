@@ -1,18 +1,16 @@
 import express from "express";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import { createClerkClient } from '@clerk/backend'
+import { clerkClient, clerkMiddleware } from '@clerk/express'
 import userRouter from "../routes/user.route.js";
 import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import cors from "cors";
 import { createPost } from "../controllers/post.controller.js";
-import { clerkMiddleware } from "@clerk/express";
+import 'dotenv/config'
 
-dotenv.config();
+const app = express()
 
-const app = express();
 
 // Initialize Clerk client
 const clerkClient = createClerkClient({
