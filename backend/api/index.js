@@ -11,7 +11,6 @@ import postRouter from '../routes/post.route.js';
 import commentRouter from '../routes/comment.route.js';
 import webhookRouter from '../routes/webhook.route.js';
 import cors from 'cors';
-import { clerkMiddleware } from '@clerk/express';
 import 'dotenv/config';
 
 dotenv.config();
