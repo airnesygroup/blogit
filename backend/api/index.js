@@ -5,6 +5,7 @@ import postRouter from "../routes/post.route.js";
 import commentRouter from "../routes/comment.route.js";
 import webhookRouter from "../routes/webhook.route.js";
 import { clerkMiddleware, requireAuth } from "@clerk/express";
+import { createClerkClient } from "@clerk/backend";  // <-- Add this import
 import cors from "cors";
 import dotenv from "dotenv";
 
