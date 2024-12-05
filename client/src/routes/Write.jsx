@@ -1,19 +1,19 @@
-import { useAuth, useUser } from '@clerk/clerk-react';
-import 'react-quill-new/dist/quill.snow.css';
-import ReactQuill from 'react-quill-new';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import Upload from '../components/Upload';
+import { useAuth, useUser } from "@clerk/clerk-react";
+import "react-quill-new/dist/quill.snow.css";
+import ReactQuill from "react-quill-new";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import Upload from "../components/Upload";
 
 const Write = () => {
   const { isLoaded, isSignedIn } = useUser();
-  const [value, setValue] = useState(''); // Content of the editor
-  const [cover, setCover] = useState(''); // Cover image
-  const [img, setImg] = useState(''); // Inline image
-  const [video, setVideo] = useState(''); // Inline video
+  const [value, setValue] = useState(""); // Content of the editor
+  const [cover, setCover] = useState(""); // Cover image
+  const [img, setImg] = useState(""); // Inline image
+  const [video, setVideo] = useState(""); // Inline video
   const [progress, setProgress] = useState(0); // Upload progress
 
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ const Write = () => {
       });
     },
     onSuccess: (res) => {
-      toast.success('Post has been created');
+      toast.success("Post has been created");
       navigate(`/${res.data.slug}`);
     },
   });
@@ -55,10 +55,10 @@ const Write = () => {
     const formData = new FormData(e.target);
 
     const data = {
-      img: cover?.filePath || '',
-      title: formData.get('title'),
-      category: formData.get('category'),
-      desc: formData.get('desc'),
+      img: cover?.filePath || "",
+      title: formData.get("title"),
+      category: formData.get("category"),
+      desc: formData.get("desc"),
       content: value,
     };
 
@@ -104,19 +104,51 @@ const Write = () => {
             className="p-2 rounded-xl bg-white shadow-md"
           >
             <option value="general">General</option>
-            <option value="technology">Technology</option>
-            <option value="engineering">Engineering</option>
+            <option value="web-design">Web Design</option>
+            <option value="development">Development</option>
+            <option value="databases">Databases</option>
+            <option value="seo">Search Engines</option>
+            <option value="marketing">Marketing</option>
           </select>
         </div>
 
-        {/* Content Editor */}
-        <ReactQuill
-          value={value}
-          onChange={setValue}
-          className="h-full overflow-auto bg-white border-2 rounded-md"
-          theme="snow"
+        {/* Short Description */}
+        <textarea
+          className="p-4 rounded-xl bg-white shadow-md"
+          name="desc"
+          placeholder="A Short Description"
         />
-        <button className="bg-blue-500 text-white p-2 rounded">Publish Post</button>
+
+        {/* Content Editor */}
+        <div className="flex flex-1">
+          {/* Upload Buttons */}
+          <div className="flex flex-col gap-2 mr-2">
+            <Upload type="image" setProgress={setProgress} setData={setImg}>
+              🌆
+            </Upload>
+            <Upload type="video" setProgress={setProgress} setData={setVideo}>
+              ▶️
+            </Upload>
+          </div>
+
+          {/* Text Editor */}
+          <ReactQuill
+            theme="snow"
+            className="flex-1 rounded-xl bg-white shadow-md"
+            value={value}
+            onChange={setValue}
+            readOnly={progress > 0 && progress < 100} // Disable during upload
+          />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          disabled={mutation.isPending || (progress > 0 && progress < 100)}
+          className="bg-blue-800 text-white font-medium rounded-xl mt-4 p-2 w-36 disabled:bg-blue-400 disabled:cursor-not-allowed"
+        >
+          {mutation.isPending ? "Loading..." : "Send"}
+        </button>
+        <p>{`Progress: ${progress}%`}</p>
       </form>
     </div>
   );
