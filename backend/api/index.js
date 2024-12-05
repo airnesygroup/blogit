@@ -1,32 +1,20 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { createClerkClient } from '@clerk/backend';
-import userRouter from '../routes/user.route.js';
-import postRouter from '../routes/post.route.js';
-import commentRouter from '../routes/comment.route.js';
-import webhookRouter from '../routes/webhook.route.js';
-import cors from 'cors';
-import { clerkMiddleware } from '@clerk/express';
-import 'dotenv/config';
-
-dotenv.config();
+import express from "express";
+import connectDB from "./lib/connectDB.js";
+import userRouter from "./routes/user.route.js";
+import postRouter from "./routes/post.route.js";
+import commentRouter from "./routes/comment.route.js";
+import webhookRouter from "./routes/webhook.route.js";
+import { clerkMiddleware, requireAuth } from "@clerk/express";
+import cors from "cors";
 
 const app = express();
 
-// Initialize Clerk Client
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-  publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,
-});
-
-// Use Clerk middleware
-app.use(clerkMiddleware({ clerkClient }));
-
-// Middleware for JSON parsing
+app.use(cors(process.env.CLIENT_URL));
+app.use(clerkMiddleware());
+app.use("/webhooks", webhookRouter);
 app.use(express.json());
 
-// Configure CORS
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -46,42 +34,43 @@ app.use(
   })
 );
 
-// API Routes
-app.use('/users', userRouter);
-app.use('/posts', postRouter); // Correctly map the posts route
-app.use('/comments', commentRouter);
-app.use('/webhook', webhookRouter);
 
-// Debug route to confirm server is running
-app.get('/debug', (req, res) => {
-  res.json({ message: 'Server is running' });
-});
+// app.get("/test",(req,res)=>{
+//   res.status(200).send("it works!")
+// })
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
-});
+// app.get("/auth-state", (req, res) => {
+//   const authState = req.auth;
+//   res.json(authState);
+// });
 
-// MongoDB connection
-const mongoURI =
-  'mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog';
+// app.get("/protect", (req, res) => {
+//   const {userId} = req.auth;
+//   if(!userId){
+//     return res.status(401).json("not authenticated")
+//   }
+//   res.status(200).json("content")
+// });
 
-if (!mongoURI) {
-  console.error('DATABASE_URL is missing in .env');
-  process.exit(1);
-}
+// app.get("/protect2", requireAuth(), (req, res) => {
+//   res.status(200).json("content")
+// });
 
-mongoose
-  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected successfully!'))
-  .catch((err) => {
-    console.error('Database connection error:', err);
-    process.exit(1);
+app.use("/users", userRouter);
+app.use("/posts", postRouter);
+app.use("/comments", commentRouter);
+
+app.use((error, req, res, next) => {
+  res.status(error.status || 500);
+
+  res.json({
+    message: error.message || "Something went wrong!",
+    status: error.status,
+    stack: error.stack,
   });
+});
 
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+app.listen(3000, () => {
+  connectDB();
+  console.log("Server is running!");
 });
