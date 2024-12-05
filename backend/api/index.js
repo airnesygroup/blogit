@@ -1,4 +1,6 @@
 
+import { clerkMiddleware, requireAuth } from '@clerk/express';
+
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -111,3 +113,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
+
