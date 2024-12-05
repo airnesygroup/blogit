@@ -94,24 +94,6 @@ export const getPost = async (req, res) => {
 
 export const createPost = async (req, res) => {
   try {
-    // Validate token
-    const receivedToken = req.headers.authorization?.split(' ')[1];
-    if (!receivedToken) {
-      return res.status(401).json({ message: 'Missing or invalid token' });
-    }
-
-    // Validate user authentication
-    const clerkUserId = req.auth?.userId;
-    if (!clerkUserId) {
-      return res.status(401).json({ message: 'Authentication failed: userId missing' });
-    }
-
-    // Find user in the database
-    const user = await User.findOne({ clerkUserId });
-    if (!user) {
-      return res.status(404).json({ message: 'User associated with token not found' });
-    }
-
     // Validate request body
     if (!req.body.title || !req.body.content) {
       return res.status(400).json({ message: 'Title and content are required' });
@@ -129,7 +111,7 @@ export const createPost = async (req, res) => {
     }
 
     // Create and save the post
-    const newPost = new Post({ user: user._id, slug, ...req.body });
+    const newPost = new Post({ slug, ...req.body });
     const post = await newPost.save();
 
     return res.status(200).json(post);
@@ -138,6 +120,7 @@ export const createPost = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 export const deletePost = async (req, res) => {
