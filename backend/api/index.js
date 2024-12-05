@@ -48,7 +48,6 @@ app.use(
 );
 
 // Require authentication for posts API
-app.use('/api/posts', requireAuth());
 
 // API Routes
 app.use('/users', userRouter);
@@ -57,7 +56,6 @@ app.use('/comments', commentRouter);
 app.use('/webhook', webhookRouter);
 
 // Route for creating posts
-app.post('/posts', createPost);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
