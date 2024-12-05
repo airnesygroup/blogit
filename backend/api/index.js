@@ -48,7 +48,7 @@ app.use(
 );
 
 // Require authentication for posts API
-app.use("/posts", requireAuth());
+app.use("/api/posts", requireAuth());
 
 // API Routes
 app.use("/users", userRouter);
