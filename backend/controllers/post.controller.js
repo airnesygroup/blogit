@@ -2,15 +2,6 @@ import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 
-
-
-// Hardcoded credentials for ImageKit
-const imagekit = new ImageKit({
-  urlEndpoint: "https://ik.imagekit.io/blogifiy",  // Replace with your actual URL Endpoint
-  publicKey: "public_F6gpylB1rbMQM244+yeFKTj9xzI=",  // Replace with your actual Public Key
-  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM= "  // Replace with your actual Private Key
-});
-
 export const getPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
@@ -91,54 +82,38 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
 export const createPost = async (req, res) => {
-  try {
-    // Validate token
-    const receivedToken = req.headers.authorization?.split(' ')[1];
-    if (!receivedToken) {
-      return res.status(401).json({ message: 'Missing or invalid token' });
-    }
+  const clerkUserId = req.auth.userId;
 
-    // Validate user authentication
-    const clerkUserId = req.auth?.userId;
-    if (!clerkUserId) {
-      return res.status(401).json({ message: 'Authentication failed: userId missing' });
-    }
+  console.log(req.headers);
 
-    // Find user in the database
-    const user = await User.findOne({ clerkUserId });
-    if (!user) {
-      return res.status(404).json({ message: 'User associated with token not found' });
-    }
-
-    // Validate request body
-    if (!req.body.title || !req.body.content) {
-      return res.status(400).json({ message: 'Title and content are required' });
-    }
-
-    // Generate unique slug
-    let slug = req.body.title.replace(/ /g, '-').toLowerCase();
-    let existingPost = await Post.findOne({ slug });
-
-    let counter = 2;
-    while (existingPost) {
-      slug = `${slug}-${counter}`;
-      existingPost = await Post.findOne({ slug });
-      counter++;
-    }
-
-    // Create and save the post
-    const newPost = new Post({ user: user._id, slug, ...req.body });
-    const post = await newPost.save();
-
-    return res.status(200).json(post);
-  } catch (error) {
-    console.error('Error during post creation:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+  if (!clerkUserId) {
+    return res.status(401).json("Not authenticated!");
   }
-};
 
+  const user = await User.findOne({ clerkUserId });
+
+  if (!user) {
+    return res.status(404).json("User not found!");
+  }
+
+  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+
+  let existingPost = await Post.findOne({ slug });
+
+  let counter = 2;
+
+  while (existingPost) {
+    slug = `${slug}-${counter}`;
+    existingPost = await Post.findOne({ slug });
+    counter++;
+  }
+
+  const newPost = new Post({ user: user._id, slug, ...req.body });
+
+  const post = await newPost.save();
+  res.status(200).json(post);
+};
 
 export const deletePost = async (req, res) => {
   const clerkUserId = req.auth.userId;
@@ -200,6 +175,12 @@ export const featurePost = async (req, res) => {
 
   res.status(200).json(updatedPost);
 };
+
+const imagekit = new ImageKit({
+  urlEndpoint: process.env.IK_URL_ENDPOINT,
+  publicKey: process.env.IK_PUBLIC_KEY,
+  privateKey: process.env.IK_PRIVATE_KEY,
+});
 
 export const uploadAuth = async (req, res) => {
   const result = imagekit.getAuthenticationParameters();
