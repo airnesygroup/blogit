@@ -7,15 +7,14 @@ import postRouter from '../routes/post.route.js';
 import commentRouter from '../routes/comment.route.js';
 import webhookRouter from '../routes/webhook.route.js';
 import cors from 'cors';
-import { createPost } from '../controllers/post.controller.js';
-import { clerkMiddleware, requireAuth } from '@clerk/express';
+import { clerkMiddleware } from '@clerk/express';
 import 'dotenv/config';
 
 dotenv.config();
 
 const app = express();
 
-// Initialize Clerk Client only once
+// Initialize Clerk Client
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
   publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,
@@ -47,20 +46,21 @@ app.use(
   })
 );
 
-// Require authentication for posts API
-
 // API Routes
 app.use('/users', userRouter);
-app.use('/posts', postRouter);
+app.use('/posts', postRouter); // Correctly map the posts route
 app.use('/comments', commentRouter);
 app.use('/webhook', webhookRouter);
 
-// Route for creating posts
+// Debug route to confirm server is running
+app.get('/debug', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(401).send('Unauthenticated!');
+  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
 });
 
 // MongoDB connection
