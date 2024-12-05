@@ -10,7 +10,7 @@ import Upload from "../components/Upload";
 
 const Write = () => {
   const { isLoaded, isSignedIn } = useUser();
-  const [value, setValue] = useState(""); // Content of the 
+  const [value, setValue] = useState(""); // Content of the editor
   const [cover, setCover] = useState(""); // Cover image
   const [img, setImg] = useState(""); // Inline image
   const [video, setVideo] = useState(""); // Inline video
