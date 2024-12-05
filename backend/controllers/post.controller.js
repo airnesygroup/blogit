@@ -1,7 +1,6 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import { clerkClient } from '@clerk/clerk-sdk-node'; // Ensure Clerk's SDK is imported
 
 
 // Hardcoded credentials for ImageKit
