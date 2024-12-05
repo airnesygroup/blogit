@@ -1,14 +1,14 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import Clerk from '@clerk/express';
+import { clerkClient } from '@clerk/clerk-sdk-node'; // Ensure Clerk's SDK is imported
 
 
 // Hardcoded credentials for ImageKit
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/blogifiy",  // Replace with your actual URL Endpoint
   publicKey: "public_F6gpylB1rbMQM244+yeFKTj9xzI=",  // Replace with your actual Public Key
-  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM="  // Replace with your actual Private Key
+  privateKey: "private_tmgyYPBSChIPjeqcn7B7UMmpaLM= "  // Replace with your actual Private Key
 });
 
 export const getPosts = async (req, res) => {
@@ -91,38 +91,35 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
-
-
-
-
-
-
-// controllers/postController.js
-
 export const createPost = async (req, res) => {
   try {
-    const receivedToken = req.headers.authorization?.split(" ")[1]; // Extract the token
-    console.log("Token received at backend:", receivedToken); // Log received token
-
-    // Verify the token
+    // Validate token
+    const receivedToken = req.headers.authorization?.split(" ")[1];
     if (!receivedToken) {
-      return res.status(401).json("No token provided!");
+      return res.status(401).json({ message: "Missing or invalid token" });
     }
 
-    // Verify the token with Clerk
-    const user = await Clerk.auth.verifySession(receivedToken);
+    // Validate user authentication
+    const clerkUserId = req.auth?.userId;
+    if (!clerkUserId) {
+      return res.status(401).json({ message: "Authentication failed: userId missing" });
+    }
+
+    // Find user in the database
+    const user = await User.findOne({ clerkUserId });
     if (!user) {
-      return res.status(401).json("Invalid or expired token!");
+      return res.status(404).json({ message: "User associated with token not found" });
     }
 
-    console.log("User authenticated:", user);
+    // Validate request body
+    if (!req.body.title || !req.body.content) {
+      return res.status(400).json({ message: "Title and content are required" });
+    }
 
-    // Generate slug
+    // Generate unique slug
     let slug = req.body.title.replace(/ /g, "-").toLowerCase();
     let existingPost = await Post.findOne({ slug });
 
-    // Handle duplicate slug
     let counter = 2;
     while (existingPost) {
       slug = `${slug}-${counter}`;
@@ -140,13 +137,6 @@ export const createPost = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
-
-
-
-
 
 
 export const deletePost = async (req, res) => {
