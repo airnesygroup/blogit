@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
 import userRouter from '../routes/user.route.js';
-import postRouter from "../routes/post.route.js"; // Correct import for default export
+import postRouter from '../routes/post.route.js';
 import commentRouter from '../routes/comment.route.js';
 import webhookRouter from '../routes/webhook.route.js';
 import cors from 'cors';
@@ -41,7 +41,7 @@ app.use(
       if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed CORS'));
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
