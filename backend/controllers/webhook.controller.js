@@ -1,7 +1,13 @@
+import express from 'express';
+import { Webhook } from 'svix';
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
-import { Webhook } from "svix";
+
+const app = express();
+
+// Make sure to use express.raw() to capture raw body data
+app.use(express.raw({ type: 'application/json' }));
 
 export const clerkWebHook = async (req, res) => {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -13,16 +19,18 @@ export const clerkWebHook = async (req, res) => {
     });
   }
 
+  // Use the raw body directly from req.body
   const payload = req.body;
   const headers = req.headers;
 
-  console.log("Payload received:", payload);
+  console.log("Raw Payload received:", payload);
   console.log("Headers received:", headers);
 
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt;
 
   try {
+    // Verify the raw body with the correct format
     evt = wh.verify(payload, headers);
     console.log("Webhook verified successfully:", evt);
   } catch (err) {
