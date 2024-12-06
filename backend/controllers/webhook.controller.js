@@ -6,7 +6,7 @@ import Comment from "../models/comment.model.js";
 
 const app = express();
 
-// Make sure to use express.raw() to capture raw body data
+// Use express.raw to capture the raw request body as Buffer
 app.use(express.raw({ type: 'application/json' }));
 
 export const clerkWebHook = async (req, res) => {
@@ -19,8 +19,7 @@ export const clerkWebHook = async (req, res) => {
     });
   }
 
-  // Use the raw body directly from req.body
-  const payload = req.body;
+  const payload = req.body; // This should be in raw format (Buffer)
   const headers = req.headers;
 
   console.log("Raw Payload received:", payload);
@@ -30,7 +29,7 @@ export const clerkWebHook = async (req, res) => {
   let evt;
 
   try {
-    // Verify the raw body with the correct format
+    // Ensure raw body is passed to verify
     evt = wh.verify(payload, headers);
     console.log("Webhook verified successfully:", evt);
   } catch (err) {
