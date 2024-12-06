@@ -48,25 +48,6 @@ app.use(
 );
 
 
-function verifyToken(req, res, next) {
-    // Get the token from the Authorization header
-    const token = req.headers['authorization']?.split(' ')[1]; // 'Bearer <token>'
-    
-    if (!token) {
-        return res.status(403).json({ message: 'No token provided' });
-    }
-
-    // Replace 'your-secret-key' with your actual secret key or use environment variables
-    jwt.verify(token, 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAumGKYOj+Nep6nkzCT6t6G99gzKzDBHaHp8DZdVYno6pu0AAyMDB8WTO75+GmQ2POn3KYNXRVyFmTXMjIoC6zrJ3kX238hEbz4G6yO8ubdz+1NkiSOTWrT5r1b3cUKDIR3MF3rfiGOq/NHOn+O6916U/ASPHpkuzq7kR5xych8E52t7sGijkMyJMvbxaIAobLGeSVZr/Ny6V1+FrH6psWz3T9G6zxiHNHY7GB+tfLOtQdvnXWEHeHKK2d91aOGyqJPgeUCgQ7UJnXuYxNtsMBCcINq0SCIKna7BlxUQcNE25Fe4yeSZzZtMq1nt1i4Rq2gDJO4Ea3wJ7+Cjywzus61QIDAQABy', (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Invalid token' });
-        }
-        // Add decoded user info to request object for later use in other routes
-        req.user = decoded;
-        next(); // Proceed to the next middleware or route handler
-    });
-}
-
 
 // Test route
 app.get("/test", (req, res) => {
