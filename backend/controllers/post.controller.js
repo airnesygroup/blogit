@@ -83,38 +83,67 @@ export const getPost = async (req, res) => {
 };
 
 export const createPost = async (req, res) => {
-  const clerkUserId = req.auth.userId;
+  // Log request headers for debugging
   console.log("Request Headers:", req.headers);
 
+  const clerkUserId = req.auth.userId;
 
-  
+  // Log the user ID to check if it's available
+  console.log("Clerk User ID:", clerkUserId);
+
+  // Check if the user is authenticated
   if (!clerkUserId) {
+    console.log("Not authenticated, returning 401.");
     return res.status(401).json("Not authenticated!");
   }
 
+  // Log before querying the User model
+  console.log("Looking for user with Clerk User ID:", clerkUserId);
+
   const user = await User.findOne({ clerkUserId });
 
+  // Log if user is found or not
   if (!user) {
+    console.log("User not found, returning 404.");
     return res.status(404).json("User not found!");
   }
 
-  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+  console.log("User found:", user);
 
+  // Generate slug from title
+  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
+  console.log("Generated initial slug:", slug);
+
+  // Check if a post with the same slug already exists
   let existingPost = await Post.findOne({ slug });
+  console.log("Checking if post with slug already exists:", existingPost);
 
   let counter = 2;
 
+  // Handle slug collision by appending a counter
   while (existingPost) {
+    console.log(`Slug collision detected. Appending counter: ${counter}`);
     slug = `${slug}-${counter}`;
     existingPost = await Post.findOne({ slug });
     counter++;
+    console.log("Updated slug:", slug);
   }
 
-  const newPost = new Post({ user: user._id, slug, ...req.body });
+  // Log the final slug to be used
+  console.log("Final unique slug to be used:", slug);
 
+  // Create a new post object with the validated data
+  const newPost = new Post({ user: user._id, slug, ...req.body });
+  console.log("New post object created:", newPost);
+
+  // Save the post to the database
   const post = await newPost.save();
+  console.log("Post saved successfully:", post);
+
+  // Send the response with the created post
   res.status(200).json(post);
 };
+
 
 export const deletePost = async (req, res) => {
   const clerkUserId = req.auth.userId;
