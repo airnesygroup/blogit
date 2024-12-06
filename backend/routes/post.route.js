@@ -20,3 +20,4 @@ router.post("/", (req, res, next) => {
   next();
 }, requireAuth(), createPost);router.delete("/:id", deletePost);
 router.patch("/feature", featurePost);
+export default router 
