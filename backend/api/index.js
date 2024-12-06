@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
 import userRouter from '../routes/user.route.js';
-import postRouter from '../routes/post.route.js';
+import postRouter from "../routes/post.route.js"; // Correct import for default export
 import commentRouter from '../routes/comment.route.js';
 import webhookRouter from '../routes/webhook.route.js';
 import cors from 'cors';
