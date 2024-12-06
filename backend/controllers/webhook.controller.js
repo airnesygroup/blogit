@@ -6,34 +6,46 @@ export const clerkWebHook = async (req, res) => {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
+    console.log("Error: Webhook secret is missing.");
     return res.status(400).json({
       message: "Webhook secret needed!",
     });
   }
 
+  console.log("Webhook secret found, proceeding to extract payload and headers.");
+
   const payload = req.body;
   const headers = req.headers;
+
+  console.log("Payload and headers received:", { payload, headers });
 
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt;
 
   try {
+    console.log("Verifying webhook payload...");
     evt = wh.verify(payload, headers);
+    console.log("Webhook verification successful:", evt);
   } catch (err) {
+    console.log("Error during webhook verification:", err);
     return res.status(400).json({
       message: "Webhook verification failed!",
       error: err.message,
     });
   }
 
-  // Check if evt is valid before accessing properties
+  // Ensure evt is valid
   if (!evt || !evt.type) {
+    console.log("Error: Invalid event data received.", evt);
     return res.status(400).json({
       message: "Invalid event data",
     });
   }
 
+  console.log("Event type received:", evt.type);
+
   if (evt.type === "user.created") {
+    console.log("Handling 'user.created' event.");
     const newUser = new User({
       clerkUserId: evt.data.id,
       username: evt.data.username || evt.data.email_addresses[0].email_address,
@@ -41,16 +53,23 @@ export const clerkWebHook = async (req, res) => {
       img: evt.data.profile_img_url,
     });
 
+    console.log("Saving new user:", newUser);
     await newUser.save();
+    console.log("User saved successfully.");
   }
 
   if (evt.type === "user.deleted") {
+    console.log("Handling 'user.deleted' event.");
     const deletedUser = await User.findOneAndDelete({
       clerkUserId: evt.data.id,
     });
 
+    console.log("Deleted user:", deletedUser);
+
     await Post.deleteMany({ user: deletedUser._id });
     await Comment.deleteMany({ user: deletedUser._id });
+
+    console.log("Related posts and comments deleted.");
   }
 
   return res.status(200).json({
