@@ -1,13 +1,10 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
-import  Clerk from '@clerk/backend';
 
 export const getPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
-
-const clerkClient = new Clerk({ apiKey: process.env.CLERK_API_KEY });
 
   const query = {};
 
@@ -85,60 +82,39 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
-
-
-
-
-
-
 export const createPost = async (req, res) => {
-  // Step 1: Check if the Authorization header is present
-  const authorizationHeader = req.headers.authorization;
-  if (!authorizationHeader) {
-    return res.status(401).json("Authorization header missing");
+  const clerkUserId = req.auth.userId;
+  console.log("Request Headers:", req.headers);
+
+
+  
+  if (!clerkUserId) {
+    return res.status(401).json("Not authenticated!");
   }
 
-  const token = authorizationHeader.split(" ")[1];
-  if (!token) {
-    return res.status(401).json("Authorization token missing or invalid format");
+  const user = await User.findOne({ clerkUserId });
+
+  if (!user) {
+    return res.status(404).json("User not found!");
   }
 
-  try {
-    // Use Clerk's verifyToken method
-    const user = await clerkClient.verifyToken(token);
+  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
 
-    console.log("User verified:", user);
+  let existingPost = await Post.findOne({ slug });
 
-    // Use the user data to perform actions, like creating posts
-    req.user = user;
+  let counter = 2;
 
-  } catch (error) {
-    console.error("Token verification failed:", error.message);
-    return res.status(401).json("Invalid or expired token");
+  while (existingPost) {
+    slug = `${slug}-${counter}`;
+    existingPost = await Post.findOne({ slug });
+    counter++;
   }
 
-  // Continue with the rest of the logic
-  const { userId } = req.user;
-  const post = new Post({ userId, ...req.body });
-  await post.save();
+  const newPost = new Post({ user: user._id, slug, ...req.body });
+
+  const post = await newPost.save();
   res.status(200).json(post);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export const deletePost = async (req, res) => {
   const clerkUserId = req.auth.userId;
