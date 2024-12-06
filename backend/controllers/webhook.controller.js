@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import { Webhook } from "svix";
+
 export const clerkWebHook = async (req, res) => {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
@@ -22,9 +23,12 @@ export const clerkWebHook = async (req, res) => {
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt;
 
+  // Convert payload to string before verifying
+  const payloadString = JSON.stringify(payload);
+
   try {
     console.log("Verifying webhook payload...");
-    evt = wh.verify(payload, headers);
+    evt = wh.verify(payloadString, headers); // Pass the stringified payload
     console.log("Webhook verification successful:", evt);
   } catch (err) {
     console.log("Error during webhook verification:", err);
@@ -76,4 +80,3 @@ export const clerkWebHook = async (req, res) => {
     message: "Webhook received",
   });
 };
-
