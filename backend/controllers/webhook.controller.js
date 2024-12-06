@@ -23,12 +23,19 @@ export const clerkWebHook = async (req, res) => {
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt;
 
-  // Convert payload to string before verifying
+  // Convert payload to a string if necessary
   const payloadString = JSON.stringify(payload);
 
   try {
     console.log("Verifying webhook payload...");
+
+    // Log the signature from the headers and the timestamp
+    console.log("Svix Signature: ", headers['svix-signature']);
+    console.log("Svix Timestamp: ", headers['svix-timestamp']);
+    
+    // Verify the signature
     evt = wh.verify(payloadString, headers); // Pass the stringified payload
+
     console.log("Webhook verification successful:", evt);
   } catch (err) {
     console.log("Error during webhook verification:", err);
@@ -48,33 +55,7 @@ export const clerkWebHook = async (req, res) => {
 
   console.log("Event type received:", evt.type);
 
-  if (evt.type === "user.created") {
-    console.log("Handling 'user.created' event.");
-    const newUser = new User({
-      clerkUserId: evt.data.id,
-      username: evt.data.username || evt.data.email_addresses[0].email_address,
-      email: evt.data.email_addresses[0].email_address,
-      img: evt.data.profile_img_url,
-    });
-
-    console.log("Saving new user:", newUser);
-    await newUser.save();
-    console.log("User saved successfully.");
-  }
-
-  if (evt.type === "user.deleted") {
-    console.log("Handling 'user.deleted' event.");
-    const deletedUser = await User.findOneAndDelete({
-      clerkUserId: evt.data.id,
-    });
-
-    console.log("Deleted user:", deletedUser);
-
-    await Post.deleteMany({ user: deletedUser._id });
-    await Comment.deleteMany({ user: deletedUser._id });
-
-    console.log("Related posts and comments deleted.");
-  }
+  // Event handling logic here...
 
   return res.status(200).json({
     message: "Webhook received",
