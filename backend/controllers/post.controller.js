@@ -82,26 +82,52 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
+
+
+
+
+
+
+
+
 export const createPost = async (req, res) => {
-  const clerkUserId = req.auth.userId;
+  // Step 1: Log the incoming request
   console.log("Request Headers:", req.headers);
 
+  // Step 2: Check the Authorization header
+  const authorizationHeader = req.headers.authorization;
+  if (!authorizationHeader) {
+    console.log("Authorization header missing");
+    return res.status(401).json("Authorization header missing");
+  }
+  const token = authorizationHeader.split(" ")[1];
+  if (!token) {
+    console.log("Invalid Authorization header format");
+    return res.status(401).json("Authorization token missing or invalid format");
+  }
+  console.log("Token received:", token);
 
-  
-  if (!clerkUserId) {
-    return res.status(401).json("Not authenticated!");
+  // Step 3: Decode the token (if using JWT or Clerk)
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with Clerk's method if needed
+    console.log("Token decoded successfully:", decoded);
+    req.user = decoded; // Store decoded data for later use
+  } catch (error) {
+    console.error("Token verification failed:", error.message);
+    return res.status(401).json("Invalid or expired token");
   }
 
-  const user = await User.findOne({ clerkUserId });
-
+  // Step 4: Look up the user in the database
+  const user = await User.findOne({ clerkUserId: req.user.id });
   if (!user) {
-    return res.status(404).json("User not found!");
+    console.log("User not found in the database");
+    return res.status(404).json("User not found");
   }
+  console.log("User found:", user);
 
+  // Step 5: Prepare the slug and check for duplicates
   let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-
   let existingPost = await Post.findOne({ slug });
-
   let counter = 2;
 
   while (existingPost) {
@@ -110,11 +136,31 @@ export const createPost = async (req, res) => {
     counter++;
   }
 
+  // Step 6: Create the post
   const newPost = new Post({ user: user._id, slug, ...req.body });
-
+  console.log("Creating post with title:", req.body.title);
+  
   const post = await newPost.save();
+  console.log("Post created successfully:", post);
+
+  // Step 7: Send the response
   res.status(200).json(post);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const deletePost = async (req, res) => {
   const clerkUserId = req.auth.userId;
