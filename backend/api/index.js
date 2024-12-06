@@ -1,7 +1,4 @@
-
 import { clerkMiddleware, requireAuth } from '@clerk/express';
-
-
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -49,27 +46,30 @@ app.use(
   })
 );
 
+// Test route
+app.get("/test", (req, res) => {
+  res.status(200).send("it works!");
+});
 
-app.get("/test",(req,res)=>{
-  res.status(200).send("it works!")
- })
-
- app.get("/auth-state", (req, res) => {
+// Auth state route
+app.get("/auth-state", (req, res) => {
   const authState = req.auth;
   res.json(authState);
- });
+});
 
- app.get("/protect", (req, res) => {
-   const {userId} = req.auth;
-   if(!userId){
-     return res.status(401).json("not authenticated")
-   }
-  res.status(200).json("content")
- });
+// Protected route without requireAuth middleware
+app.get("/protect", (req, res) => {
+  const { userId } = req.auth;
+  if (!userId) {
+    return res.status(401).json("not authenticated");
+  }
+  res.status(200).json("content");
+});
 
- app.get("/protect2", requireAuth(), (req, res) => {
-   res.status(200).json("content")
- });
+// Protected route with requireAuth middleware
+app.get("/protect2", requireAuth(), (req, res) => {
+  res.status(200).json("content");
+});
 
 // API Routes
 app.use('/users', userRouter);
@@ -89,8 +89,7 @@ app.use((err, req, res, next) => {
 });
 
 // MongoDB connection
-const mongoURI =
-  'mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog';
+const mongoURI = 'mongodb+srv://airnesyinfo:airnesyinfo@cluster0.54a22.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&dbName=blog';
 
 if (!mongoURI) {
   console.error('DATABASE_URL is missing in .env');
@@ -105,11 +104,8 @@ mongoose
     process.exit(1);
   });
 
-
-
 // Start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
-
