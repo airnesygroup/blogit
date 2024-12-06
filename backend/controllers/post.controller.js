@@ -1,10 +1,13 @@
 import ImageKit from "imagekit";
 import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
+import { Clerk } from '@clerk/backend';
 
 export const getPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
+
+const clerkClient = new Clerk({ apiKey: process.env.CLERK_API_KEY });
 
   const query = {};
 
@@ -89,61 +92,36 @@ export const getPost = async (req, res) => {
 
 
 
-
 export const createPost = async (req, res) => {
-  // Step 1: Log the incoming request
-  console.log("Request Headers:", req.headers);
-
-  // Step 2: Check the Authorization header
+  // Step 1: Check if the Authorization header is present
   const authorizationHeader = req.headers.authorization;
   if (!authorizationHeader) {
-    console.log("Authorization header missing");
     return res.status(401).json("Authorization header missing");
   }
+
   const token = authorizationHeader.split(" ")[1];
   if (!token) {
-    console.log("Invalid Authorization header format");
     return res.status(401).json("Authorization token missing or invalid format");
   }
-  console.log("Token received:", token);
 
-  // Step 3: Decode the token (if using JWT or Clerk)
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with Clerk's method if needed
-    console.log("Token decoded successfully:", decoded);
-    req.user = decoded; // Store decoded data for later use
+    // Use Clerk's verifyToken method
+    const user = await clerkClient.verifyToken(token);
+
+    console.log("User verified:", user);
+
+    // Use the user data to perform actions, like creating posts
+    req.user = user;
+
   } catch (error) {
     console.error("Token verification failed:", error.message);
     return res.status(401).json("Invalid or expired token");
   }
 
-  // Step 4: Look up the user in the database
-  const user = await User.findOne({ clerkUserId: req.user.id });
-  if (!user) {
-    console.log("User not found in the database");
-    return res.status(404).json("User not found");
-  }
-  console.log("User found:", user);
-
-  // Step 5: Prepare the slug and check for duplicates
-  let slug = req.body.title.replace(/ /g, "-").toLowerCase();
-  let existingPost = await Post.findOne({ slug });
-  let counter = 2;
-
-  while (existingPost) {
-    slug = `${slug}-${counter}`;
-    existingPost = await Post.findOne({ slug });
-    counter++;
-  }
-
-  // Step 6: Create the post
-  const newPost = new Post({ user: user._id, slug, ...req.body });
-  console.log("Creating post with title:", req.body.title);
-  
-  const post = await newPost.save();
-  console.log("Post created successfully:", post);
-
-  // Step 7: Send the response
+  // Continue with the rest of the logic
+  const { userId } = req.user;
+  const post = new Post({ userId, ...req.body });
+  await post.save();
   res.status(200).json(post);
 };
 
