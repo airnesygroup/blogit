@@ -53,7 +53,7 @@ const Comment = ({ comment, postId }) => {
               className="text-xs text-red-300 hover:text-red-500 cursor-pointer"
               onClick={() => mutation.mutate()}
             >
-              delete
+              delet
               {mutation.isPending && <span>(in progress)</span>}
             </span>
           )}
